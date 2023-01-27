@@ -29,7 +29,7 @@ class PrintClassToTable() {
 
 
         for (entry in propertyMap.entries) {
-            headerValuesResult += Util().padFormat(entry.key, entry.value) +"│"
+            headerValuesResult += padFormat(entry.key, entry.value) +"│"
             for(i in 0 until entry.value) {
                 headerTopBoxResult += "─"
                 headerMidBoxResult += "─"
@@ -45,7 +45,7 @@ class PrintClassToTable() {
         for(c in arrayList) {
             for (entry in propertyMap.entries) {
                 val value = c.toString().split(entry.key)[1].replace("=", "").split(",")[0].replace(")", "")
-                valuesResult += "│" + Util().padFormat(value, entry.value)
+                valuesResult += "│" + padFormat(value, entry.value)
             }
             valuesResult += "|"+System.lineSeparator()
         }
@@ -66,5 +66,26 @@ class PrintClassToTable() {
             #$valuesResult
             #$footerBotBoxResult
         """.trimMargin("#"))
+    }
+
+    private fun padLeft(s: String, n: Int): String {
+        return "%${n}s".format(s)
+    }
+
+    private fun padRight(s: String, n: Int): String {
+        return "%-${n}s".format(s)
+    }
+
+    fun padFormat(s: String, n: Int): String {
+        var transformString = s
+
+        if (s.length > n) {
+            transformString = s.substring(s.length - (n))
+        }
+
+        val leftPad = (n + transformString.length) / 2
+        Log.e("padForamt", "$n | (${leftPad}) $s(${s.length}) (${n})")
+
+        return padRight(padLeft(transformString, leftPad), n)
     }
 }
