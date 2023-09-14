@@ -12,12 +12,12 @@ class MainActivity : AppCompatActivity() {
 
         val arrayList:ArrayList<Card> = arrayListOf(
             Card("A", "S", 1),
-            Card("1", "S", 1),
-            Card("A", "Sasf23wfd", 1),
+            Card("1", "name", 1),
+            Card("suit", "Sas, f23wfd", 1),
             Card("B", "S", 112391299),
-            Card("cdw", "S", 1),
+            Card("cdw", "score", 1),
         )
 
-        PrintClassToTable().printProperty(Card::class.members, arrayList)
+        PrintClassToTable.printProperty(Card::class.members, arrayList)
     }
 }

@@ -1,91 +1,127 @@
 package com.s2d5.printroom
 
 import android.util.Log
+import java.lang.Exception
 import java.lang.Integer.max
 import kotlin.reflect.KCallable
 
-class PrintClassToTable() {
-    private val propertyMap: LinkedHashMap<String, Int> = linkedMapOf()
-    fun printProperty(members: Collection<KCallable<*>>, arrayList: ArrayList<Card>) {
-        for (m in members) {
-            if (!m.toString().contains("(")) {
-                //Log.e(TAG, m.name)
-                propertyMap[m.name] = m.name.length
-            }
-        }
+class PrintClassToTable {
 
-        for (c in arrayList) {
-            Log.e("card", c.toString())
+    companion object {
+        private val propertyMap: LinkedHashMap<String, Int> = linkedMapOf()
+
+        @JvmStatic
+        // 커스텀 데이터와 클래스의 속성을 받아서 시각화된 문자열을 반환하는 함수
+        fun <T> printProperty(members: Collection<KCallable<*>>, arrayList: ArrayList<T>): String {
+            // 클래스의 속성을 반복하면서 각 속성의 이름과 길이를 저장
+            for (m in members) {
+                if (!m.toString().contains("(")) {
+                    propertyMap[m.name] = m.name.length
+                }
+            }
+
+            // 커스텀 데이터를 반복하면서 각 속성의 값을 추출하고 문자열 시각화에 필요한 길이 계산
+            for (c in arrayList) {
+                for (entry in propertyMap.entries) {
+                    try {
+                        // 리플렉션을 사용하여 속성 값을 추출하고 길이 계산
+                        val field = c!!::class.java.getDeclaredField(entry.key)
+                        field.isAccessible = true
+                        val propertyValue = field.get(c)!!.toString()
+                        propertyMap[entry.key] = max(propertyMap[entry.key] ?: 3, propertyValue.length + 3)
+                    } catch (e: Exception) {
+                        // 필드 액세스 중 예외 처리 (필드가 없거나 액세스 권한이 없는 경우)
+                        Log.e("error", e.message.toString())
+                    }
+                }
+            }
+
+            // 테이블 헤더 및 상자 문자열 초기화
+            var headerTopBoxResult = "┌"
+            var headerValuesResult = "│"
+            var headerMidBoxResult = "├"
+            var footerBotBoxResult = "└"
+
+            // 각 속성의 이름과 길이를 기반으로 테이블 헤더 문자열 생성
             for (entry in propertyMap.entries) {
-                val value = c.toString().split(entry.key)[1].replace("=", "").split(",")[0].replace(")", "")
-                propertyMap[entry.key] = max(propertyMap[entry.key] ?: 3, value.length+3)
+                headerValuesResult += padFormat(entry.key, entry.value) + "│"
+                for (i in 0 until entry.value) {
+                    headerTopBoxResult += "─"
+                    headerMidBoxResult += "─"
+                    footerBotBoxResult += "─"
+                }
+                headerTopBoxResult += "┬"
+                headerMidBoxResult += "┼"
+                footerBotBoxResult += "┴"
             }
-        }
 
-        var headerTopBoxResult = "┌"
-        var headerValuesResult = "│"
-        var headerMidBoxResult = "├"
-        var footerBotBoxResult = "└"
-
-
-        for (entry in propertyMap.entries) {
-            headerValuesResult += padFormat(entry.key, entry.value) +"│"
-            for(i in 0 until entry.value) {
-                headerTopBoxResult += "─"
-                headerMidBoxResult += "─"
-                footerBotBoxResult += "─"
+            // 데이터 값 문자열 초기화
+            var valuesResult = ""
+            for (c in arrayList) {
+                for (entry in propertyMap.entries) {
+                    try {
+                        // 리플렉션을 사용하여 속성 값을 추출하고 문자열 시각화에 추가
+                        val field = c!!::class.java.getDeclaredField(entry.key)
+                        field.isAccessible = true
+                        val propertyValue = field.get(c)!!.toString()
+                        valuesResult += "│" + padFormat(propertyValue, entry.value)
+                    } catch (e: Exception) {
+                        // 필드 액세스 중 예외 처리 (필드가 없거나 액세스 권한이 없는 경우)
+                        Log.e("error", e.message.toString())
+                    }
+                }
+                valuesResult += "|" + System.lineSeparator()
             }
-            headerTopBoxResult += "┬"
-            headerMidBoxResult += "┼"
-            footerBotBoxResult += "┴"
-            Log.e(entry.key, entry.value.toString())
-        }
 
-        var valuesResult = ""
-        for(c in arrayList) {
-            for (entry in propertyMap.entries) {
-                val value = c.toString().split(entry.key)[1].replace("=", "").split(",")[0].replace(")", "")
-                valuesResult += "│" + padFormat(value, entry.value)
+            // 테이블 상자 문자열 마무리
+            headerTopBoxResult = headerTopBoxResult.substring(0, headerTopBoxResult.length - 1)
+            headerTopBoxResult += "┐"
+            headerMidBoxResult = headerMidBoxResult.substring(0, headerMidBoxResult.length - 1)
+            headerMidBoxResult += "│"
+            footerBotBoxResult = footerBotBoxResult.substring(0, footerBotBoxResult.length - 1)
+            footerBotBoxResult += "┘"
+            valuesResult = valuesResult.substring(0, valuesResult.length - 1)
+
+            // 생성된 테이블 문자열 출력 및 반환
+            Log.e("Table", headerTopBoxResult)
+            Log.e("Table", headerValuesResult)
+            Log.e("Table", headerMidBoxResult)
+
+            for (valueStr in valuesResult.split(System.lineSeparator())) {
+                Log.e("Table", valueStr)
             }
-            valuesResult += "|"+System.lineSeparator()
-        }
+            Log.e("Table", footerBotBoxResult)
 
-        headerTopBoxResult = headerTopBoxResult.substring(0, headerTopBoxResult.length-1)
-        headerTopBoxResult += "┐"
-        headerMidBoxResult = headerMidBoxResult.substring(0, headerMidBoxResult.length-1)
-        headerMidBoxResult += "│"
-        footerBotBoxResult = footerBotBoxResult.substring(0, footerBotBoxResult.length-1)
-        footerBotBoxResult += "┘"
-        valuesResult = valuesResult.substring(0, valuesResult.length-1)
-
-        Log.e("Table", """
-            
+            return """
             #$headerTopBoxResult
             #$headerValuesResult
             #$headerMidBoxResult
             #$valuesResult
             #$footerBotBoxResult
-        """.trimMargin("#"))
-    }
-
-    private fun padLeft(s: String, n: Int): String {
-        return "%${n}s".format(s)
-    }
-
-    private fun padRight(s: String, n: Int): String {
-        return "%-${n}s".format(s)
-    }
-
-    fun padFormat(s: String, n: Int): String {
-        var transformString = s
-
-        if (s.length > n) {
-            transformString = s.substring(s.length - (n))
+        """.trimMargin("#")
         }
 
-        val leftPad = (n + transformString.length) / 2
-        Log.e("padForamt", "$n | (${leftPad}) $s(${s.length}) (${n})")
+        // 문자열을 왼쪽으로 패딩하는 함수
+        private fun padLeft(s: String, n: Int): String {
+            return "%${n}s".format(s)
+        }
 
-        return padRight(padLeft(transformString, leftPad), n)
+        // 문자열을 오른쪽으로 패딩하는 함수
+        private fun padRight(s: String, n: Int): String {
+            return "%-${n}s".format(s)
+        }
+
+        // 문자열을 지정된 길이에 맞춰 가운데로 패딩하는 함수
+        private fun padFormat(s: String, n: Int): String {
+            var transformString = s
+
+            if (s.length > n) {
+                transformString = s.substring(s.length - (n))
+            }
+
+            val leftPad = (n + transformString.length) / 2
+
+            return padRight(padLeft(transformString, leftPad), n)
+        }
     }
 }
