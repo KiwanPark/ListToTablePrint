@@ -5,7 +5,20 @@ import java.lang.Exception
 import java.lang.Integer.max
 import kotlin.reflect.KCallable
 
+private val String.koreanLength: Int
+    get() {
+        var length = 0
+        val koreanRegex = Regex("[ㄱ-힣]")
+        for (letter in this) {
+            if (koreanRegex.containsMatchIn(letter.toString())) {
+                length++
+            }
+        }
+        return length
+    }
+
 class PrintClassToTable {
+
 
     companion object {
         private val propertyMap: LinkedHashMap<String, Int> = linkedMapOf()
@@ -28,7 +41,18 @@ class PrintClassToTable {
                         val field = c!!::class.java.getDeclaredField(entry.key)
                         field.isAccessible = true
                         val propertyValue = field.get(c)!!.toString()
-                        propertyMap[entry.key] = max(propertyMap[entry.key] ?: 3, propertyValue.length + 3)
+                        val koreanRegex = Regex("[ㄱ-힣]")
+                        var length = propertyValue.length
+                        for (letter in propertyValue) {
+                            if (koreanRegex.containsMatchIn(letter.toString())) {
+                                length++
+                            }
+                        }
+                        if (length % 2 != 0) {
+                            length++
+                        }
+
+                        propertyMap[entry.key] = max(propertyMap[entry.key] ?: 3, length + 4)
                     } catch (e: Exception) {
                         // 필드 액세스 중 예외 처리 (필드가 없거나 액세스 권한이 없는 경우)
                         Log.e("error", e.message.toString())
@@ -45,7 +69,7 @@ class PrintClassToTable {
             // 각 속성의 이름과 길이를 기반으로 테이블 헤더 문자열 생성
             for (entry in propertyMap.entries) {
                 headerValuesResult += padFormat(entry.key, entry.value) + "│"
-                for (i in 0 until entry.value) {
+                for (i in 0 until entry.value / 2) {
                     headerTopBoxResult += "─"
                     headerMidBoxResult += "─"
                     footerBotBoxResult += "─"
@@ -64,7 +88,7 @@ class PrintClassToTable {
                         val field = c!!::class.java.getDeclaredField(entry.key)
                         field.isAccessible = true
                         val propertyValue = field.get(c)!!.toString()
-                        valuesResult += "│" + padFormat(propertyValue, entry.value)
+                        valuesResult += "│" + padFormat(propertyValue, entry.value - propertyValue.koreanLength)
                     } catch (e: Exception) {
                         // 필드 액세스 중 예외 처리 (필드가 없거나 액세스 권한이 없는 경우)
                         Log.e("error", e.message.toString())
